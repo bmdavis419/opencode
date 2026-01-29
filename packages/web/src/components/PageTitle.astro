@@ -1,0 +1,147 @@
+---
+const route = Astro.locals.starlightRoute
+const data = route.entry.data
+const title = data.title
+const description = data.description
+const path = Astro.url.pathname
+---
+
+<div class="page-title">
+  <div class="page-title-text">
+    <h1 id="_top">{title}</h1>
+    {description && <p class="page-description">{description}</p>}
+  </div>
+  <button
+    type="button"
+    class="copy-mdx"
+    data-copy-mdx
+    data-path={path}
+    aria-label="Copy this page as Markdown"
+  >
+    Copy as Markdown
+  </button>
+</div>
+
+<script>
+  const buttons = document.querySelectorAll("[data-copy-mdx]")
+
+  const base = (path) => {
+    const clean = path.replace(/\/$/, "")
+    if (clean === "") return "/index"
+    if (clean === "/docs") return "/docs/index"
+    return clean
+  }
+
+  const copy = (text) => {
+    const api = navigator.clipboard
+    if (!api) return Promise.reject(new Error("Clipboard unavailable"))
+    return api.writeText(text)
+  }
+
+  const update = (button, text, state) => {
+    button.textContent = text
+    if (state) {
+      button.dataset.state = state
+      return
+    }
+    button.removeAttribute("data-state")
+  }
+
+  const reset = (button, text) => window.setTimeout(() => update(button, text), 1200)
+
+  buttons.forEach((button) => {
+    const label = button.textContent || "Copy as Markdown"
+    const path = button.dataset.path || window.location.pathname
+    const url = `${base(path)}.md`
+
+    button.addEventListener("click", () => {
+      update(button, "Copying...", "loading")
+
+      fetch(url)
+        .then((res) => {
+          if (!res.ok) return Promise.reject(new Error(`Failed to load ${url}`))
+          return res.text()
+        })
+        .then((text) => copy(text))
+        .then(() => {
+          update(button, "Copied", "copied")
+          reset(button, label)
+        })
+        .catch(() => {
+          update(button, "Copy failed", "error")
+          reset(button, label)
+        })
+    })
+  })
+</script>
+
+<style>
+  .page-title {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .page-title-text {
+    min-width: min(100%, 32rem);
+  }
+
+  h1 {
+    font-weight: 600;
+    color: var(--sl-color-text);
+    line-height: var(--sl-line-height-headings);
+    font-size: var(--sl-text-h1);
+    font-family: var(--__sl-font-headings);
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+  }
+
+  p.page-description {
+    margin-top: 0.25rem;
+    line-height: 1.5;
+    color: var(--sl-color-text-secondary);
+  }
+
+  .copy-mdx {
+    margin-left: auto;
+    border: 1px solid var(--sl-color-border);
+    background: var(--sl-color-bg);
+    color: var(--sl-color-text);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    line-height: 1;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  }
+
+  .copy-mdx:hover {
+    border-color: var(--sl-color-text);
+  }
+
+  .copy-mdx[data-state="loading"] {
+    opacity: 0.7;
+  }
+
+  .copy-mdx[data-state="copied"] {
+    border-color: var(--sl-color-green);
+    color: var(--sl-color-green);
+  }
+
+  .copy-mdx[data-state="error"] {
+    border-color: var(--sl-color-red);
+    color: var(--sl-color-red);
+  }
+
+  @media (max-width: 48rem) {
+    .copy-mdx {
+      width: 100%;
+      margin-left: 0;
+      text-align: center;
+    }
+  }
+</style>

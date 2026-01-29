@@ -9,7 +9,9 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "check": "astro check",
+    "format": "../../node_modules/.bin/prettier --write ."
   },
   "dependencies": {
     "@astrojs/cloudflare": "12.6.3",
